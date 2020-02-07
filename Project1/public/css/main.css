@@ -57,6 +57,10 @@ form {
   color: #ffeb3b;
 }
 
+.centered {
+  text-align: center;
+}
+
 .mobile-nav {
   width: 30rem;
   height: 100vh;
