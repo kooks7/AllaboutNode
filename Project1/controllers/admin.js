@@ -39,7 +39,7 @@ exports.getEditProduct = (req, res, next) => {
 
 // 스태틱을 사용하면 모든 인스턴스의 값을 불러오나?
 exports.getProducts = (req, res, next) => {
-  product.fetchAll(products => {
+  Product.fetchAll(products => {
     res.render('admin/products', {
       prods: products,
       pageTitle: 'Admin Products',
