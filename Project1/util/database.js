@@ -1,11 +1,8 @@
-const mysql = require('mysql2');
+const Sequelize = require('sequelize');
 
-// 새로운 연결을 계속 만드는것은 비효율적이다. 따라서 연결 풀을 만들어야 한다.
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  database: 'node-complete',
-  password: '1325'
+const sequelize = new Sequelize('node-complete', 'root', '1325', {
+  dialect: 'mysql',
+  host: 'localhost'
 });
 
-module.exports = pool.promise();
+module.exports = sequelize;

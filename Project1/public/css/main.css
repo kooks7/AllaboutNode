@@ -61,6 +61,14 @@ form {
   text-align: center;
 }
 
+.image {
+  height: 20rem;
+}
+
+.image img {
+  height: 100%;
+}
+
 .mobile-nav {
   width: 30rem;
   height: 100vh;
