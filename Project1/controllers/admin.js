@@ -13,16 +13,15 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  const product = new Product(
-    title,
-    price,
-    description,
-    imageUrl,
-    null,
-    req.user._id
-  );
+  const product = new Product({
+    title: title,
+    price: price,
+    description: description,
+    imageUrl: imageUrl,
+    userId: req.user
+  });
   product
-    .save()
+    .save() // mongoose에서 제공하는 메서드
     .then(result => {
       console.log('Created Product');
       res.redirect('/');
@@ -39,7 +38,6 @@ exports.getEditProduct = (req, res, next) => {
   }
   const prodId = req.params.productId;
   Product.findById(prodId)
-    // Product.findByPk(prodId)
     .then(product => {
       if (!product) {
         return res.redirect('/');
@@ -63,15 +61,16 @@ exports.postEditProduct = (req, res, next) => {
   const updatedDesc = req.body.description;
   const updatedImageUrl = req.body.imageUrl;
 
-  const product = new Product(
-    updatedTitle,
-    updatedPrice,
-    updatedDesc,
-    updatedImageUrl,
-    prodId
-  );
-  product
-    .save()
+  Product.findById(prodId)
+    .then(product => {
+      // mongoose에서 가져온 product
+      // mognoose에서 save를 사용하게 되면 자동으로 기존 데이터가 없으면 저장, 있으면 수정함.
+      product.title = updatedTitle;
+      product.price = updatedPrice;
+      product.description = updatedDesc;
+      product.imageUrl = updatedImageUrl;
+      return product.save();
+    })
     .then(result => {
       console.log('Updated');
       res.redirect('/admin/products');
@@ -83,8 +82,12 @@ exports.postEditProduct = (req, res, next) => {
 
 // 스태틱을 사용하면 모든 인스턴스의 값을 불러오나?
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll()
+  Product.find()
+    // .select('title price imageUrl -_id')
+    // .populate('userId', 'name email')
+    // mongoose 메서드로서 조회한 데이터를 가져옴
     .then(products => {
+      console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
@@ -98,7 +101,7 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteById(prodId)
+  Product.findByIdAndRemove(prodId)
     .then(() => {
       res.redirect('/admin/products');
     })

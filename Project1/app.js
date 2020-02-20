@@ -2,9 +2,9 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const errorController = require('./controllers/error');
-const mongoConnect = require('./util/database').mongoConnect;
 const User = require('./models/user');
 
 const app = express();
@@ -23,9 +23,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 이 함수는 즉시 실행되는 것이 아니라 요청이 들어오면 실행됨으로 서버 실행 후 실행된다.
 // req.user라는 객체를 생성한다.
 app.use((req, res, next) => {
-  User.findById('5e4ce53ab1831a3a04886954')
+  User.findById('5e4e1c88d7060d12b0b13fd0')
     .then(user => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
+      // console.log(
+      //   '123123',
+      //   user.cart.items.map(e => {
+      //     return e;
+      //   })
+      // );
+      req.user = user;
       next();
     })
     .catch(err => console.log(err));
@@ -36,6 +42,24 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect(() => {
-  app.listen(4000);
-});
+mongoose
+  .connect('mongodb://localhost:27017/test')
+  .then(result => {
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({
+          name: 'MJ',
+          email: 'busanminjae@naver.com',
+          cart: {
+            items: []
+          }
+        });
+        user.save();
+      }
+    });
+
+    app.listen(4000);
+  })
+  .catch(err => {
+    console.log(err);
+  });
