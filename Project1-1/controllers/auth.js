@@ -13,7 +13,11 @@ exports.postLogin = (req, res, next) => {
     .then(user => {
       req.session.isLoggedIn = true;
       req.session.user = user;
-      res.redirect('/');
+      // 세션이 저장되고 다음 실행
+      req.session.save(err => {
+        console.log(err);
+        res.redirect('/');
+      });
     })
     .catch(err => {
       console.log(err);
