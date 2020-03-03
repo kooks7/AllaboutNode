@@ -2,18 +2,31 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 
 exports.getLogin = (req, res, next) => {
+  let message = req.flash('error');
+  console.log('123123', message);
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
   res.render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
-    isAuthenticated: false
+    errorMessage: message
   });
 };
 
 exports.getSignup = (req, res, next) => {
+  let message = req.flash('error');
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
   res.render('auth/signup', {
     path: '/signup',
     pageTitle: 'Signup',
-    isAuthenticated: false
+    errorMessage: message
   });
 };
 
@@ -23,6 +36,8 @@ exports.postLogin = (req, res, next) => {
   User.findOne({ email: email })
     .then(user => {
       if (!user) {
+        // flash(에러 이름, 메세지)
+        req.flash('error', 'Invalid Email or Password!');
         return res.redirect('/login');
       }
       //bcrypt.compare(평문,해시값) => promise 리턴
@@ -40,6 +55,7 @@ exports.postLogin = (req, res, next) => {
             });
           }
           // 패스워드가 일치하지 않으면
+          req.flash('error', 'Invalid Email or Password!');
           res.redirect('/login');
         })
         .catch(err => {
@@ -58,6 +74,7 @@ exports.postSignup = (req, res, next) => {
   User.findOne({ email: email })
     .then(userDoc => {
       if (userDoc) {
+        req.flash('error', 'E-Mail already Exists');
         return res.redirect('/signup');
       }
       // 패스워드 암호화 , 12번의 해싱
