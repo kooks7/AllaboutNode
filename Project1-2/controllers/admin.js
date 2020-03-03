@@ -2,7 +2,7 @@ const Product = require('../models/product');
 
 exports.getAddProduct = (req, res, next) => {
   // 로그인 상태 체크
-  if (!req.sesson.isLoggedIn) {
+  if (!req.session.isLoggedIn) {
     return res.redirect('/login');
   }
   res.render('admin/edit-product', {
