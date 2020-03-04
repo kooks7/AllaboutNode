@@ -1,13 +1,20 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const bcrypt = require('bcryptjs');
 const sgMail = require('@sendgrid/mail');
 
 const User = require('../models/user');
 
-mg.messages().send(data, function(error, body) {
-  console.log(error);
-  console.log(body);
+// 깃 올리기 전에 따로 뺴기
+
+fs.readFile(path.join(__dirname, '../api_key.json'), (err, api_key) => {
+  if (err) {
+    console.log(err);
+  }
+  const key = JSON.parse(api_key);
+  sgMail.setApiKey(key);
 });
 
 exports.getLogin = (req, res, next) => {
@@ -98,12 +105,12 @@ exports.postSignup = (req, res, next) => {
         })
         .then(result => {
           res.redirect('/login');
-          // return sgMail.send({
-          //   to: email,
-          //   from: 'nodeshop@shop.com',
-          //   subject: 'Signup suceeded!',
-          //   html: '<h1>Hi! 회원가입을 축하합니다.</h1>'
-          // });
+          return sgMail.send({
+            to: email,
+            from: 'nodeshop@shop.com',
+            subject: 'Signup suceeded!',
+            html: '<h1>Hi! 회원가입을 축하합니다.</h1>'
+          });
         })
         .catch(err => {
           console.log(err);
@@ -155,15 +162,15 @@ exports.postReset = (req, res, next) => {
       })
       .then(result => {
         res.redirect('/');
-        // sgMail.send({
-        //   to: req.body.email,
-        //   from: 'nodeshop@shop.com',
-        //   subject: 'Password reset',
-        //   html: `
-        //     <h2>패스워드 재설정</h2>
-        //     <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password. </p>
-        //   `
-        // });
+        sgMail.send({
+          to: req.body.email,
+          from: 'nodeshop@shop.com',
+          subject: 'Password reset',
+          html: `
+            <h2>패스워드 재설정</h2>
+            <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password. </p>
+          `
+        });
       })
       .catch(err => {
         console.log(err);
