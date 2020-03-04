@@ -1,9 +1,17 @@
+const crypto = require('crypto');
+
 const bcrypt = require('bcryptjs');
+const sgMail = require('@sendgrid/mail');
+
 const User = require('../models/user');
+
+mg.messages().send(data, function(error, body) {
+  console.log(error);
+  console.log(body);
+});
 
 exports.getLogin = (req, res, next) => {
   let message = req.flash('error');
-  console.log('123123', message);
   if (message.length > 0) {
     message = message[0];
   } else {
@@ -90,9 +98,17 @@ exports.postSignup = (req, res, next) => {
         })
         .then(result => {
           res.redirect('/login');
+          // return sgMail.send({
+          //   to: email,
+          //   from: 'nodeshop@shop.com',
+          //   subject: 'Signup suceeded!',
+          //   html: '<h1>Hi! 회원가입을 축하합니다.</h1>'
+          // });
+        })
+        .catch(err => {
+          console.log(err);
         });
     })
-
     .catch(err => {
       console.log(err);
     });
@@ -102,5 +118,55 @@ exports.postLogout = (req, res, next) => {
   req.session.destroy(err => {
     console.log(err);
     res.redirect('/');
+  });
+};
+
+exports.getReset = (req, res, next) => {
+  let message = req.flash('error');
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
+  res.render('auth/reset', {
+    path: '/reset',
+    pageTitle: 'Reset Password',
+    errorMessage: message
+  });
+};
+
+exports.postReset = (req, res, next) => {
+  crypto.randomBytes(32, (err, buffer) => {
+    if (err) {
+      console.log(err);
+      return res.redirect('/reset');
+    }
+    // hex 로 변경한다.
+    const token = buffer.toString('hex');
+    User.findOne({ email: req.body.email })
+      .then(user => {
+        if (!user) {
+          req.flash('error', 'No account with that email found.');
+          return res.redirect('/reset');
+        }
+        user.resetToken = token;
+        user.resetTokenExpiration = Date.now() + 3600000;
+        return user.save();
+      })
+      .then(result => {
+        res.redirect('/');
+        // sgMail.send({
+        //   to: req.body.email,
+        //   from: 'nodeshop@shop.com',
+        //   subject: 'Password reset',
+        //   html: `
+        //     <h2>패스워드 재설정</h2>
+        //     <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password. </p>
+        //   `
+        // });
+      })
+      .catch(err => {
+        console.log(err);
+      });
   });
 };
