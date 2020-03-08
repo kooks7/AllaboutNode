@@ -1,0 +1,19 @@
+.form {
+  height: 20rem;
+  width: 50%;
+  color: yellow;
+  
+}
+
+
+.content {
+  width: 50%;
+  margin: 10rem;
+  background-color: beige;
+  color: skyblue;
+}
+
+.centered {
+  align-content: center;
+  color: red;
+}
