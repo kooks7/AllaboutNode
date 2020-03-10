@@ -5,6 +5,9 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const sgMail = require('@sendgrid/mail');
 
+// routes/auth.js에서 미리 설정했던 isEmail 함수에서 받아 오류 생성
+const { validationResult } = require('express-validator/check');
+
 const User = require('../models/user');
 
 // 깃 올리기 전에 따로 뺴기
@@ -85,6 +88,17 @@ exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const confirmPassword = req.body.confirmPassword;
+  // client 사이드에서 오류가 발생하면 req로 전달
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Signup',
+      errorMessage: errors.array()[0].msg
+    });
+  }
+
   // Email 겹치는지 확인하기
   User.findOne({ email: email })
     .then(userDoc => {
