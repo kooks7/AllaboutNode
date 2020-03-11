@@ -44,13 +44,27 @@ exports.getSignup = (req, res, next) => {
   res.render('auth/signup', {
     path: '/signup',
     pageTitle: 'Signup',
-    errorMessage: message
+    errorMessage: message,
+    oldInput: {
+      email: '',
+      password: '',
+      confirmPassword: ''
+    }
   });
 };
 
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      errorMessage: errors.array()[0].msg
+    });
+  }
   User.findOne({ email: email })
     .then(user => {
       if (!user) {
@@ -87,7 +101,6 @@ exports.postLogin = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
   // client 사이드에서 오류가 발생하면 req로 전달
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -95,40 +108,37 @@ exports.postSignup = (req, res, next) => {
     return res.status(422).render('auth/signup', {
       path: '/signup',
       pageTitle: 'Signup',
-      errorMessage: errors.array()[0].msg
+      errorMessage: errors.array()[0].msg,
+      // 이전 Input 다시 보내줘서 form value로 넣기
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: req.body.confirmPassword
+      }
     });
   }
 
   // Email 겹치는지 확인하기
-  User.findOne({ email: email })
-    .then(userDoc => {
-      if (userDoc) {
-        req.flash('error', 'E-Mail already Exists');
-        return res.redirect('/signup');
-      }
-      // 패스워드 암호화 , 12번의 해싱
-      return bcrypt
-        .hash(password, 12)
-        .then(hashedPassword => {
-          const user = new User({
-            email: email,
-            password: hashedPassword,
-            cart: { items: [] }
-          });
-          return user.save();
-        })
-        .then(result => {
-          res.redirect('/login');
-          return sgMail.send({
-            to: email,
-            from: 'nodeshop@shop.com',
-            subject: 'Signup suceeded!',
-            html: '<h1>Hi! 회원가입을 축하합니다.</h1>'
-          });
-        })
-        .catch(err => {
-          console.log(err);
-        });
+
+  // 패스워드 암호화 , 12번의 해싱
+  return bcrypt
+    .hash(password, 12)
+    .then(hashedPassword => {
+      const user = new User({
+        email: email,
+        password: hashedPassword,
+        cart: { items: [] }
+      });
+      return user.save();
+    })
+    .then(result => {
+      res.redirect('/login');
+      return sgMail.send({
+        to: email,
+        from: 'nodeshop@shop.com',
+        subject: 'Signup suceeded!',
+        html: '<h1>Hi! 회원가입을 축하합니다.</h1>'
+      });
     })
     .catch(err => {
       console.log(err);
