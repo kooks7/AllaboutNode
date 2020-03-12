@@ -1,4 +1,5 @@
 const Product = require('../models/product');
+const { validationResult } = require('express-validator/check');
 
 exports.getAddProduct = (req, res, next) => {
   // 로그인 상태 체크
@@ -8,7 +9,9 @@ exports.getAddProduct = (req, res, next) => {
   res.render('admin/edit-product', {
     pageTitle: 'Add Product',
     path: '/admin/add-product',
-    editing: false
+    editing: false,
+    hasError: false,
+    errorMessage: null
   });
 };
 
@@ -17,6 +20,22 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add Product',
+      path: '/admin/add-product',
+      editing: false,
+      hasError: true,
+      product: {
+        title: title,
+        imageUrl: imageUrl,
+        price: price,
+        description: description
+      },
+      errorMessage: errors.array()[0].msg
+    });
+  }
   const product = new Product({
     title: title,
     price: price,
@@ -51,7 +70,9 @@ exports.getEditProduct = (req, res, next) => {
         pageTitle: 'Edit Product',
         path: '/admin/edit-product',
         editing: editMode,
-        product: product
+        product: product,
+        hasError: false,
+        errorMessage: null
       });
     })
     .catch(err => console.log(err));
@@ -87,7 +108,7 @@ exports.getProducts = (req, res, next) => {
     // .select('title price -_id')
     // .populate('userId', 'name')
     .then(products => {
-      console.log(products);
+      // console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
@@ -100,8 +121,9 @@ exports.getProducts = (req, res, next) => {
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
   // product id와 userId가 모두 같아야 삭제 가능
-  Product.deleteOne({ _id: prodId, userId: req.user_id })
-    .then(() => {
+  Product.deleteOne({ _id: prodId, userId: req.user._id })
+    .then(result => {
+      console.log(result);
       console.log('DESTROYED PRODUCT');
       res.redirect('/admin/products');
     })
