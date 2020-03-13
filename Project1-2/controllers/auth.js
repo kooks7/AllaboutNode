@@ -30,7 +30,12 @@ exports.getLogin = (req, res, next) => {
   res.render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
-    errorMessage: message
+    errorMessage: message,
+    oldInput: {
+      email: '',
+      password: ''
+    },
+    validationErrors: []
   });
 };
 
@@ -49,7 +54,8 @@ exports.getSignup = (req, res, next) => {
       email: '',
       password: '',
       confirmPassword: ''
-    }
+    },
+    validationErrors: []
   });
 };
 
@@ -62,15 +68,29 @@ exports.postLogin = (req, res, next) => {
     return res.status(422).render('auth/login', {
       path: '/login',
       pageTitle: 'Login',
-      errorMessage: errors.array()[0].msg
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password
+      },
+      validationErrors: errors.array()
     });
   }
+  // 로그인 Input이 정확하면
   User.findOne({ email: email })
     .then(user => {
+      // 로그인 정보가 없으면
       if (!user) {
-        // flash(에러 이름, 메세지)
-        req.flash('error', 'Invalid Email or Password!');
-        return res.redirect('/login');
+        return res.status(422).render('auth/login', {
+          path: '/login',
+          pageTitle: 'Login',
+          errorMessage: 'Invalid Email or Password!',
+          oldInput: {
+            email: email,
+            password: password
+          },
+          validationErrors: []
+        });
       }
       //bcrypt.compare(평문,해시값) => promise 리턴
       bcrypt
@@ -87,8 +107,16 @@ exports.postLogin = (req, res, next) => {
             });
           }
           // 패스워드가 일치하지 않으면
-          req.flash('error', 'Invalid Email or Password!');
-          res.redirect('/login');
+          return res.status(422).render('auth/login', {
+            path: '/login',
+            pageTitle: 'Login',
+            errorMessage: 'Invalid Email or Password!',
+            oldInput: {
+              email: email,
+              password: password
+            },
+            validationErrors: []
+          });
         })
         .catch(err => {
           console.log(err);
@@ -103,8 +131,8 @@ exports.postSignup = (req, res, next) => {
   const password = req.body.password;
   // client 사이드에서 오류가 발생하면 req로 전달
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
-    console.log(errors.array());
     return res.status(422).render('auth/signup', {
       path: '/signup',
       pageTitle: 'Signup',
@@ -114,7 +142,9 @@ exports.postSignup = (req, res, next) => {
         email: email,
         password: password,
         confirmPassword: req.body.confirmPassword
-      }
+      },
+      // 오류 생겼을 때 errors 보내주기
+      validationErrors: errors.array()
     });
   }
 

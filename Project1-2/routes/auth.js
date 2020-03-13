@@ -17,10 +17,12 @@ router.post(
   [
     body('email')
       .isEmail()
-      .withMessage('Email을 입력해주세요'),
+      .withMessage('Email형식을 입력해주세요')
+      .normalizeEmail(), // 이메일 형식 만들기
     body('password', '패스워드를 5글자 이상 또는 알파벳만 넣어주세요.')
       .isLength({ min: 5 })
       .isAlphanumeric()
+      .trim() // 공백 지우기
   ],
   authController.postLogin
 );
@@ -41,7 +43,8 @@ router.post(
             return Promise.reject('E-mail exists already!!');
           }
         });
-      }),
+      })
+      .normalizeEmail(),
     //body(인자1, 인자2) => req.body로 날라오는 값을 검증
     // 인자1 : 검증할 값, 인자2: default 에러 메세지
     body(
@@ -50,13 +53,16 @@ router.post(
     )
       .isLength({ min: 5 })
       // 알파벳만 가능
-      .isAlphanumeric(),
-    body('confirmPassword').custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error('Passwords have to match!');
-      }
-      return true;
-    })
+      .isAlphanumeric()
+      .trim(),
+    body('confirmPassword')
+      .trim()
+      .custom((value, { req }) => {
+        if (value !== req.body.password) {
+          throw new Error('Passwords have to match!');
+        }
+        return true;
+      })
   ],
   authController.postSignup
 );

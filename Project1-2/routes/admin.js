@@ -1,6 +1,7 @@
 const path = require('path');
 
 const express = require('express');
+const { body } = require('express-validator/check');
 
 const adminController = require('../controllers/admin');
 
@@ -15,11 +16,41 @@ router.get('/add-product', isAuth, adminController.getAddProduct);
 router.get('/products', isAuth, adminController.getProducts);
 
 // /admin/add-product => POST
-router.post('/add-product', isAuth, adminController.postAddProduct);
+router.post(
+  '/add-product',
+  [
+    body('title', 'Title에 최소한 5글자 이상 넣어주세요')
+      .isLength({ min: 3 })
+      .isString()
+      .trim(),
+    body('imageUrl', 'URL 형식을 넣어주세요').isURL(),
+    body('price', '숫자만 입력해주세요').isFloat(),
+    body('description', '설명에 최소 5글자 이상을 작성해 주세요')
+      .isLength({ min: 5, max: 400 })
+      .trim()
+  ],
+  isAuth,
+  adminController.postAddProduct
+);
 
 router.get('/edit-product/:productId', isAuth, adminController.getEditProduct);
 
-router.post('/edit-product', isAuth, adminController.postEditProduct);
+router.post(
+  '/edit-product',
+  isAuth,
+  [
+    body('title', 'Title에 최소한 5글자 이상 넣어주세요')
+      .isLength({ min: 3 })
+      .isString()
+      .trim(),
+    body('imageUrl', 'URL 형식을 넣어주세요').isURL(),
+    body('price', '숫자만 입력해주세요').isFloat(),
+    body('description', '설명에 최소 5글자 이상을 작성해 주세요')
+      .isLength({ min: 5, max: 400 })
+      .trim()
+  ],
+  adminController.postEditProduct
+);
 
 router.post('/delete-product', isAuth, adminController.postDeleteProduct);
 
