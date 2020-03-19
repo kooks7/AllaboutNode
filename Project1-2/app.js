@@ -7,6 +7,7 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
+const multer = require('multer');
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
@@ -22,6 +23,16 @@ const store = new MongoDBStore({
 // 토큰 설정
 const csrfProtection = csrf();
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // 인자 : (error, 저장하고자 하는 위치)
+    cb(null, 'images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, new Date().getTime() + '-' + file.originalname);
+  }
+});
+
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
@@ -29,8 +40,28 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
+const fileFilter = (req, file, cb) => {
+  // 허용하는 파일 확장자
+  if (
+    file.mimetype === 'image/png' ||
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/jpeg'
+  ) {
+    cb(null, true);
+  } else {
+    // 허용하지 않는 파일 확장자
+    cb(null, false);
+  }
+};
+
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single('image')
+);
+// app.use(multer({ dest: 'images' }).single('image'));
 app.use(express.static(path.join(__dirname, 'public')));
+// images Url 로 오게 되면 images 폴더에 있는 파일을 보여줘라
+app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use(
   session({
     secret: 'my secret',
@@ -78,7 +109,7 @@ app.use(errorController.get404);
 // 보통 여기 미들웨어 까지 올 수 없지만 4개의 인자를 넣어주면 바로
 // 여기로 도달하게 된다.
 app.use((error, req, res, next) => {
-  res.status(500).render('500', {
+  res.status(error.httpStatusCode).render('500', {
     pageTitle: '에러 ㅠㅠ',
     path: '/500',
     isAuthenticated: req.session.isLoggedIn

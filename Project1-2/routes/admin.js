@@ -23,7 +23,6 @@ router.post(
       .isLength({ min: 3 })
       .isString()
       .trim(),
-    body('imageUrl', 'URL 형식을 넣어주세요').isURL(),
     body('price', '숫자만 입력해주세요').isFloat(),
     body('description', '설명에 최소 5글자 이상을 작성해 주세요')
       .isLength({ min: 5, max: 400 })
@@ -43,7 +42,6 @@ router.post(
       .isLength({ min: 3 })
       .isString()
       .trim(),
-    body('imageUrl', 'URL 형식을 넣어주세요').isURL(),
     body('price', '숫자만 입력해주세요').isFloat(),
     body('description', '설명에 최소 5글자 이상을 작성해 주세요')
       .isLength({ min: 5, max: 400 })
