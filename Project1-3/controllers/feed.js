@@ -7,6 +7,7 @@ exports.getPosts = (req, res, next) => {
 exports.createPost = (req, res, next) => {
   const title = req.body.title;
   const content = req.body.content;
+  console.log(title);
   // Create post in db
   // status : 201 새로운 리소스 생성을 성공했다.
   res.status(201).json({
