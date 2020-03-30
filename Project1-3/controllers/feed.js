@@ -129,6 +129,31 @@ exports.updatePost = (req, res, next) => {
     });
 };
 
+exports.deletePost = (req, res, next) => {
+  const postId = req.params.postId;
+  Post.findById(postId)
+    .then(post => {
+      if (!post) {
+        const error = new Error('Could not find post.');
+        error.statusCode = 404;
+        throw err;
+      }
+      // Check logged in user
+      clearImage(post.imageUrl);
+      return Post.findByIdAndRemove(postId);
+    })
+    .then(result => {
+      console.log(result);
+      res.status(200).json({ message: 'Delete Post.' });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
 // 파일 path 받아서 해당 파일 삭제하는 Helper Function
 const clearImage = filePath => {
   filePath = path.join(__dirname, '..', filePath);
