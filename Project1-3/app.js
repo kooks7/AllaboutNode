@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const MONGODB_URI = 'mongodb://localhost:27017/restapi';
 
 const feedRoutes = require('./routes/feed');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -55,12 +56,14 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 // });
 
 app.use('/feed', feedRoutes);
+app.use('/auth', authRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
-  res.status(status).json({ message: message });
+  const data = error.data;
+  res.status(status).json({ message: message, data: data });
 });
 
 mongoose
