@@ -3,6 +3,7 @@ const path = require('path');
 
 const { validationResult } = require('express-validator/check');
 
+const io = require('../socket');
 const Post = require('../models/post');
 const User = require('../models/user');
 
@@ -14,6 +15,7 @@ exports.getPosts = async (req, res, next) => {
     // 총 item 갯수 세기
     const totalItems = await Post.find().countDocuments();
     const posts = await Post.find()
+      .populate('creator')
       .skip((currentPage - 1) * perPage)
       .limit(perPage);
 
@@ -58,6 +60,11 @@ exports.createPost = async (req, res, next) => {
     const user = await User.findById(req.userId);
     user.posts.push(post);
     await user.save();
+
+    // emit : req 받은 사용자를 포함해 연결된 모든 client에게 데이터 보내줌
+    // emit(채널, {사용자에게 알림, 보내줄 데이터})
+    io.getIO().emit('posts', { action: 'create', post: post });
+
     res.status(201).json({
       message: 'Post created successfully!',
       post: post,
