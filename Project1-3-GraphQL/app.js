@@ -36,7 +36,7 @@ const fileFilter = (req, file, cb) => {
     cb(null, false);
   }
 };
-app.use(cors());
+// app.use(cors());
 // app.use(bodyParser.urlencoded());
 app.use(bodyParser.json()); //application/json
 app.use(
@@ -44,12 +44,38 @@ app.use(
 );
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'GET, POST, PUT, PATCH, DELETE'
+  );
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  console.log(req.method);
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(
   '/graphql',
   graphqlHttp({
     schema: graphqlSchema,
     rootValue: graphqlResolver,
-    graphiql: true
+    graphiql: true,
+    customFormatErrorFn(err) {
+      // shcema 타이핑오류라던지 기술적 오류면 실행
+      if (!err.originalError) {
+        console.log('기술적 오류!');
+        return err;
+      }
+      // 기술적 오류가 아닌 custom 오류이면 실행
+      const data = err.originalError.data;
+      const message = err.message || 'An error ocuured';
+      const code = err.originalError.code || 500;
+      return { message: message, status: code, data: data };
+    }
   })
 );
 
