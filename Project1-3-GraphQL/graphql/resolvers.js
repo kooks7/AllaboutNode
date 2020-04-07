@@ -115,14 +115,24 @@ module.exports = {
       updatedAt: createdPost.updatedAt.toISOString(),
     };
   },
-  posts: async function (args, req) {
+  posts: async function ({ page }, req) {
     if (!req.isAuth) {
       const error = new Error('권한이 없습니다.');
       error.code = 401;
       throw error;
     }
+    // 1. page 설정이 없으면 1페이지 보여주기
+    if (!page) {
+      page = 1;
+    }
+    // 2. page 설정
+    const perPage = 2;
     const totalPosts = await Post.find().countDocuments();
-    const posts = await Post.find().sort({ createdAt: -1 }).populate('creator');
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * perPage)
+      .limit(perPage)
+      .populate('creator');
 
     //mongodb 객체 형태로 보내주면 graphql이 읽을 수 없으므로 변환해서 보내주기
     return {
