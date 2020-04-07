@@ -2,7 +2,7 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
+// const cors = require('cors');
 
 const multer = require('multer');
 const uuidv4 = require('uuid/v4');
@@ -10,6 +10,7 @@ const graphqlHttp = require('express-graphql');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
+const auth = require('./middleware/auth');
 
 const mongoose = require('mongoose');
 const MONGODB_URI = 'mongodb://localhost:27017/restapi';
@@ -22,7 +23,7 @@ const fileStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, uuidv4());
-  }
+  },
 });
 
 const fileFilter = (req, file, cb) => {
@@ -51,12 +52,12 @@ app.use((req, res, next) => {
     'GET, POST, PUT, PATCH, DELETE'
   );
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  console.log(req.method);
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
   next();
 });
+app.use(auth);
 
 app.use(
   '/graphql',
@@ -75,7 +76,7 @@ app.use(
       const message = err.message || 'An error ocuured';
       const code = err.originalError.code || 500;
       return { message: message, status: code, data: data };
-    }
+    },
   })
 );
 
@@ -89,9 +90,9 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(MONGODB_URI)
-  .then(result => {
+  .then((result) => {
     app.listen(8080);
   })
-  .catch(err => {
+  .catch((err) => {
     console.log(err);
   });
