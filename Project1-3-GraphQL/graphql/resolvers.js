@@ -265,6 +265,41 @@ module.exports = {
     await user.save();
     return true;
   },
+  // 첫번째 인자는 graphql에서 정의한 인자, 두번째 인자는  request이다.
+  status: async function (args, req) {
+    if (!req.isAuth) {
+      const error = new Error('권한이 없습니다.');
+      error.code = 401;
+      throw error;
+    }
+    // console.log(req.);
+    // 2. status db에서 찾기
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error();
+      error.status = 404;
+      throw error;
+    }
+    return { ...user._doc, _id: user._id.toString() };
+  },
+  updateStatus: async function ({ status }, req) {
+    if (!req.isAuth) {
+      const error = new Error('권한 없디?');
+      error.code = 401;
+      throw error;
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error();
+      error.status = 404;
+      throw error;
+    }
+    user.status = status;
+    await user.save();
+
+    return { ...user._doc };
+  },
 };
 
 const clearImage = (filePath) => {
