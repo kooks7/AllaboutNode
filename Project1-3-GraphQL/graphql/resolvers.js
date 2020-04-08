@@ -61,6 +61,7 @@ module.exports = {
     );
     return { token: token, userId: user._id.toString() };
   },
+
   createPost: async function ({ postInput }, req) {
     // 1. 토큰 검사하기
     if (!req.isAuth) {
@@ -145,6 +146,86 @@ module.exports = {
         };
       }),
       totalPosts: totalPosts,
+    };
+  },
+  getPost: async function ({ id }, req) {
+    if (!req.isAuth) {
+      const error = new Error('권한이 없습니다.');
+      error.code = 401;
+      throw error;
+    }
+    const post = await Post.findById(id).populate('creator');
+    if (!post) {
+      const error = new Error('No post found!');
+      error.code = 404;
+      throw error;
+    }
+
+    console.log(post);
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+    };
+  },
+  updatePost: async function ({ id, postInput }, req) {
+    // 1. 권한 체크
+    if (!req.isAuth) {
+      const error = new Error('권한이 없습니다.');
+      error.code = 401;
+      throw error;
+    }
+    // 2. mongoDB에서 수정할 post 객체 가져오기
+    const post = await Post.findById(id).populate('creator');
+    if (!post) {
+      const error = new Error('No post found!');
+      error.code = 404;
+      throw error;
+    }
+    console.log(postInput.imageUrl);
+    // 3. 자기가 작성한 post만 수정가능하게 권한 설정
+    if (post.creator._id.toString() !== req.userId.toString()) {
+      const error = new Error('다른 사람의 post를 수정할 권한이 없습니다.');
+      error.code = 403;
+      throw error;
+    }
+    // 4. 사용자 Input 체크
+    const errors = [];
+    if (
+      validator.isEmpty(postInput.title) ||
+      !validator.isLength(postInput.title, { min: 3 })
+    ) {
+      errors.push({ message: 'Title is invalid.' });
+    }
+    if (
+      validator.isEmpty(postInput.content) ||
+      !validator.isLength(postInput.content, { min: 3 })
+    ) {
+      errors.push({ message: 'content is invalid.' });
+    }
+    if (errors.length > 0) {
+      const error = new Error('Invalid Input');
+      error.data = errors;
+      error.code = 422;
+      throw error;
+    }
+
+    // 5. post 객체 update하기
+    post.title = postInput.title;
+    post.content = postInput.content;
+    // 사용자가 새로운 사진을 업데이트했다면
+    if (postInput.imageUrl !== 'undefined') {
+      post.imageUrl = postInput.imageUrl;
+    }
+    // 6. mongoDB에 저장
+    const updatedPost = await post.save();
+
+    return {
+      ...updatedPost._doc,
+      _id: updatedPost._id.toString(),
+      createdAt: updatedPost.createdAt.toISOString(),
+      updatedAt: updatedPost.updatedAt.toISOString(),
     };
   },
 };
