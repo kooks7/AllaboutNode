@@ -1,3 +1,6 @@
+const path = require('path');
+const fs = require('fs');
+
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
@@ -228,4 +231,43 @@ module.exports = {
       updatedAt: updatedPost.updatedAt.toISOString(),
     };
   },
+  deletePost: async function ({ id }, req) {
+    // 1. 권한 확인
+    if (!req.isAuth) {
+      const error = new Error('권한이 없습니다.');
+      error.code = 401;
+      throw error;
+    }
+    // 2. 삭제하고자 하는 post 객체 가져오기
+    const post = await Post.findById(id);
+
+    // 없으면 오류!
+    console.log(post);
+    if (!post) {
+      const error = new Error('포스트가 없습니다.');
+      error.state = 404;
+      throw error;
+    }
+    // 3. post의 userId와 요청하는 유저의 id가 일치하는지 확인하기
+    if (req.userId.toString() !== post.creator.toString()) {
+      const error = new Error('다른 사람의 post를 삭제할 권한이 없습니다.');
+      error.code = 403;
+      throw error;
+    }
+
+    // 4. post DB와 이미지 삭제하기
+    clearImage(post.imageUrl);
+    await Post.findByIdAndRemove(id);
+
+    // 5. user객체 가져와서 posts에 해당 post지우기
+    const user = await User.findById(req.userId);
+    user.posts.pull(id);
+    await user.save();
+    return true;
+  },
+};
+
+const clearImage = (filePath) => {
+  filePath = path.join(__dirname, '..', filePath);
+  fs.unlink(filePath, (err) => console.log(err));
 };
