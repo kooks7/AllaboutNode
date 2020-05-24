@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -8,16 +9,19 @@ const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
 const multer = require('multer');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
-
-const MONGODB_URI = 'mongodb://localhost:27017/test';
-
+// mongodb+srv://kooks7:<password>@nodeshop-s8bpd.gcp.mongodb.net/test?retryWrites=true&w=majority
+console.log(process.env.MONGO_USER);
+const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@nodeshop-s8bpd.gcp.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}?retryWrites=true&w=majority`;
 const app = express();
 const store = new MongoDBStore({
   uri: MONGODB_URI,
-  collection: 'sessions'
+  collection: 'sessions',
 });
 
 // 토큰 설정
@@ -30,7 +34,7 @@ const fileStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, new Date().getTime() + '-' + file.originalname);
-  }
+  },
 });
 
 app.set('view engine', 'ejs');
@@ -39,6 +43,15 @@ app.set('views', 'views');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
+
+// {flags : 'a'} -> append 옵션: 덮어쓰지 않고 새로 쓰겠어
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, 'access.log'),
+  { flags: 'a' }
+);
+app.use(helmet());
+app.use(compression());
+app.use(morgan('combined', { stream: accessLogStream }));
 
 const fileFilter = (req, file, cb) => {
   // 허용하는 파일 확장자
@@ -67,7 +80,7 @@ app.use(
     secret: 'my secret',
     resave: false,
     saveUninitialized: false,
-    store: store
+    store: store,
   })
 );
 app.use(csrfProtection);
@@ -86,14 +99,14 @@ app.use((req, res, next) => {
     return next();
   }
   User.findById(req.session.user._id)
-    .then(user => {
+    .then((user) => {
       if (!user) {
         return next();
       }
       req.user = user;
       next();
     })
-    .catch(err => {
+    .catch((err) => {
       next(new Error(err));
     });
 });
@@ -112,15 +125,15 @@ app.use((error, req, res, next) => {
   res.status(error.httpStatusCode).render('500', {
     pageTitle: '에러 ㅠㅠ',
     path: '/500',
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
   });
 });
 
 mongoose
   .connect(MONGODB_URI)
-  .then(result => {
-    app.listen(3000);
+  .then((result) => {
+    app.listen(process.env.PORT || 3000);
   })
-  .catch(err => {
+  .catch((err) => {
     console.log(err);
   });
