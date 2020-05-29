@@ -190,7 +190,7 @@ exports.deletePost = async (req, res, next) => {
 };
 
 // 파일 path 받아서 해당 파일 삭제하는 Helper Function
-const clearImage = filePath => {
+const clearImage = (filePath) => {
   filePath = path.join(__dirname, '..', filePath);
-  fs.unlink(filePath, err => console.log(err));
+  fs.unlink(filePath, (err) => console.log(err));
 };
