@@ -122,14 +122,4 @@ exports.getOrders = (req, res, next) => {
       orders: orders
     });
   });
-  // req.user
-  //   .getOrders()
-  //   .then(orders => {
-  //     res.render('shop/orders', {
-  //       path: '/orders',
-  //       pageTitle: 'your Orders',
-  //       orders: orders
-  //     });
-  //   })
-  //   .catch(err => console.log(err));
 };
