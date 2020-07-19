@@ -1,6 +1,6 @@
 ## All about Node.js
 
-:clap::clap:
+:clap::clap::clap:
 
 1. 마지막으로 정리하고 프로젝트 만들기 위해 리뷰한다.
 
